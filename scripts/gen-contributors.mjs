@@ -81,7 +81,9 @@ function gitContributors(fileAbsPath) {
       map.get(key).commits += 1
     })
 
-  return [...map.values()].sort((a, b) => b.commits - a.commits)
+  return [...map.values()]
+    .sort((a, b) => b.commits - a.commits)
+    .map(({ email: _email, ...contributor }) => contributor)
 }
 
 const files = walk(DOCS_DIR)

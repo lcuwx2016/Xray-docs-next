@@ -3,7 +3,12 @@ import contributorsMap from "../../.generated/contributors.json"
 import { useRoute, useData } from "vitepress"
 import { computed } from "vue"
 
-type Contributor = { name: string; email?: string; commits: number }
+type Contributor = {
+  name: string
+  github?: string
+  avatarUrl: string
+  commits: number
+}
 
 const route = useRoute()
 const { lang, site } = useData()
@@ -55,7 +60,7 @@ const t = computed(() => {
     </summary>
 
     <ul class="list">
-      <li v-for="c in list" :key="c.email || c.name" class="item">
+      <li v-for="c in list" :key="c.github || c.name" class="item">
         <img
           class="avatar"
           :src="c.avatarUrl"
@@ -69,13 +74,6 @@ const t = computed(() => {
           </div>
 
           <div class="sub">
-            <a
-              v-if="c.email && !c.github"
-              class="link"
-              :href="`mailto:${c.email}`"
-            >
-              {{ c.email }}
-            </a>
             <a
               v-if="c.github"
               class="link"
