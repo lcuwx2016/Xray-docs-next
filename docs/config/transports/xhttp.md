@@ -24,7 +24,7 @@ XHTTP 默认有多路复用，延迟比 Vision 低但多线程测速不如它，
 6. 无法穿透其它 CDN 或反代，`mode` 选 `"packet-up"`，兼容性最强
 
 ::: warning
-部分 CDN 会掐断长时间没有实际下行数据的 HTTP 连接。例如使用 Cloudflare 时，SSH 等代理长连接还应在应用层配置保活（如服务端的 `ClientAliveInterval`），不能只依赖 XHTTP 的传输层保活。
+部分 CDN 会中断长时间没有实际下行数据的 HTTP 连接。例如使用 Cloudflare 时，SSH 等长连接还应配置应用层保活，例如在 SSH 服务端的 `sshd_config` 中设置 `ClientAliveInterval`，或在 SSH 客户端设置 `ServerAliveInterval`，不能只依赖 XHTTP 的传输层保活。
 :::
 
 ## XHTTPObject
