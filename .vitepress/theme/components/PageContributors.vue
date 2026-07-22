@@ -6,12 +6,17 @@ import { computed } from "vue"
 type Contributor = { name: string; email?: string; commits: number }
 
 const route = useRoute()
-const { lang } = useData()
+const { lang, site } = useData()
 
 const list = computed(() => {
   const map = contributorsMap as Record<string, Contributor[]>
 
-  const raw = route.path
+  let raw = route.path
+  const base = site.value.base
+
+  if (base !== "/" && raw.startsWith(base)) {
+    raw = "/" + raw.slice(base.length).replace(/^\/+/, "")
+  }
 
   const candidates = new Set<string>()
 
