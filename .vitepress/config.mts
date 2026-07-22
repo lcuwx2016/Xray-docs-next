@@ -9,9 +9,11 @@ import { sidebar as sidebar } from "./menus/sidebar.mts"
 import { sidebar as sidebar_en } from "./menus/sidebar.en.mts"
 import { sidebar as sidebar_ru } from "./menus/sidebar.ru.mts"
 
+const base = "/xtls/"
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  base: "/xtls/",
+  base,
   srcDir: "docs",
 
   title: "Project X",
@@ -21,7 +23,7 @@ export default defineConfig({
       "link",
       {
         rel: "icon",
-        href: "/logo-light.svg",
+        href: `${base}logo-light.svg`,
         media: "(prefers-color-scheme: light)"
       }
     ],
@@ -29,7 +31,7 @@ export default defineConfig({
       "link",
       {
         rel: "icon",
-        href: "/logo-dark.svg",
+        href: `${base}logo-dark.svg`,
         media: "(prefers-color-scheme: dark)"
       }
     ]
