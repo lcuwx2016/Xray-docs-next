@@ -128,6 +128,81 @@ Header-padding size used to avoid fixed-length request and response headers. Cli
 
 Ranges such as `"100-1000"` are randomized for every request or response. The default is `"100-1000"`.
 
+### HTTP appearance and obfuscation options
+
+These options change how padding, session metadata, and upload data appear in HTTP requests. They are intended mainly for compatibility with CDNs or WAFs that filter fixed XHTTP signatures. Client and server settings must be mutually compatible. They reduce static signatures but do not make traffic inherently undetectable.
+
+```json
+{
+  "xPaddingObfsMode": true,
+  "xPaddingKey": "_dc",
+  "xPaddingHeader": "Referer",
+  "xPaddingPlacement": "queryInHeader",
+  "xPaddingMethod": "tokenish",
+  "uplinkHTTPMethod": "POST",
+  "sessionPlacement": "path",
+  "sessionKey": "",
+  "seqPlacement": "path",
+  "seqKey": "",
+  "uplinkDataPlacement": "auto",
+  "uplinkDataKey": "X-Data",
+  "uplinkChunkSize": "3000-4000",
+  "serverMaxHeaderBytes": 0
+}
+```
+
+> `xPaddingObfsMode`: true | false
+
+Enables the configurable padding appearance. The default is `false`, preserving the legacy `Referer: ...?x_padding=XXX...` behavior for compatibility with old clients. When enabled, the following padding key, header, placement, and method settings control the new appearance.
+
+> `xPaddingKey`: string
+
+Name of the query parameter or cookie carrying padding. Default: `"x_padding"`.
+
+> `xPaddingHeader`: string
+
+When placement is `"queryInHeader"`, this HTTP header carries the URL containing the padding query. With `"header"`, it carries the padding directly. Default: `"X-Padding"`; legacy client requests still use `Referer`.
+
+> `xPaddingPlacement`: "queryInHeader" | "query" | "header" | "cookie"
+
+Padding location. The default `"queryInHeader"` puts padding in a URL query and that URL in the selected HTTP header. The other values put it directly in the request query, an HTTP header, or a cookie.
+
+> `xPaddingMethod`: "repeat-x" | "tokenish"
+
+Padding generation method. `"repeat-x"` repeats `X` and is the compatible default. `"tokenish"` generates random token-like characters and adjusts their size for HTTP header compression.
+
+> `uplinkHTTPMethod`: string
+
+HTTP method for upload requests. It is case-insensitive and normalized to uppercase. Default: `"POST"`. A middlebox may require `PUT`, `PATCH`, `GET`, or another method; `GET` is available only in `packet-up`. Xray does not probe or rotate methods automatically, so the selected method must pass every CDN and reverse proxy in the path.
+
+> `sessionPlacement`: "path" | "query" | "header" | "cookie"
+
+Session ID location. Default: `"path"`. For other placements, `sessionKey` customizes the name. Its defaults are `x_session` for query/cookie and `X-Session` for a header.
+
+> `seqPlacement`: "path" | "query" | "header" | "cookie"
+
+Location of the `packet-up` sequence number. Default: `"path"`. For other placements, `seqKey` customizes the name. Its defaults are `x_seq` for query/cookie and `X-Seq` for a header.
+
+> `uplinkDataPlacement`: "auto" | "body" | "header" | "cookie"
+
+Upload-data location. Default: `"auto"`; normal uploads use the body, while the server can automatically accept supported placements. `"header"` and `"cookie"` are available only in `packet-up`; data is Base64-encoded and split into chunks. These modes are intended for exceptional paths that only permit GET or reject request bodies, not for normal deployments.
+
+> `uplinkDataKey`: string
+
+Base name used for upload chunks in headers or cookies. Defaults to `x_data` for cookies and `X-Data` for headers/auto.
+
+> `uplinkChunkSize`: number | string
+
+Size of each Base64 chunk when upload data is carried in headers or cookies. Ranges are supported for randomization. This limits one chunk only; `scMaxEachPostBytes` still controls the total upload data in one request.
+
+> `serverMaxHeaderBytes`: number
+
+Server only. Changes the total request-header limit accepted by XHTTP's HTTP server. `0` uses the implementation default; negative values are invalid. Increase it only when you control the complete path, because a CDN or reverse proxy may still enforce a lower limit.
+
+::: warning
+Header/cookie upload adds Base64 overhead and is constrained by individual-field, total-header, reverse-proxy, and CDN limits. For HTTP `431`, reduce both `uplinkChunkSize` and `scMaxEachPostBytes`. More requests may also require a larger server-side `scMaxBufferedPosts`. Increasing `serverMaxHeaderBytes` alone cannot change upstream middlebox limits.
+:::
+
 > `noGRPCHeader`: true | false
 
 Client only (`stream-up` / `stream-one`). Disables the upload-side `Content-Type: application/grpc` disguise. Default: `false`.
@@ -142,7 +217,7 @@ Here, sc means sub-connection. Limits are counted independently for each proxied
 
 > `scMaxEachPostBytes`: number | string
 
-Maximum client data per POST, in bytes. It must remain below the limit imposed by the CDN or other middlebox; the server also rejects oversized POSTs. Supports ranges such as `"500000-1000000"`. Default: `1000000` (1 MB).
+Maximum client data per chunked upload request, in bytes. The field retains `Post` in its name for compatibility and also applies to PUT, PATCH, and GET. It must remain below the limit imposed by the CDN or other middlebox; the server rejects oversized requests. Supports ranges such as `"500000-1000000"`. Default: `1000000` (1 MB).
 
 > `scMinPostsIntervalMs`: number | string
 
@@ -228,12 +303,12 @@ Upload and download may use different addresses, SNI values, IPv4/IPv6, H2/H3, C
 
 ### packet-up
 
-1. The client uploads using `POST /yourpath/sameUUID/seq`.
+1. By default, the client uploads using `POST /yourpath/sameUUID/seq`.
    - A random UUID associates upload and download.
    - The session is terminated if the server cannot associate both directions within 30 seconds.
    - `seq` starts at 0. A POST body must finish before the next begins, but its response need not be awaited.
    - The server reorders POSTs that arrive out of order.
-   - UUID and `seq` are in the path rather than the query string to avoid unusual middlebox behavior.
+   - UUID and `seq` are in the path by default. Appearance options can instead put them in a query, header, or cookie.
 2. The client starts downloading with `GET /yourpath/sameUUID`.
    - Response headers include `X-Accel-Buffering: no`, `Cache-Control: no-store`, and `Content-Type: text/event-stream`.
    - HTTP/1.1 also uses `Transfer-Encoding: chunked`; H2/H3 do not need it.
