@@ -104,11 +104,11 @@ Client `"auto"` behavior:
 
 Server `"auto"` accepts all three modes. A specific mode normally accepts only that mode, except `"stream-up"`, which also accepts `stream-one`.
 
-| Mode | Upload | Download | Compatibility | Typical use |
-| --- | --- | --- | --- | --- |
-| `packet-up` | Chunked POST requests | Streaming GET | Highest | CDNs and diverse middleboxes |
-| `stream-up` | Streaming POST | Streaming GET | High | TLS H2 through a CDN, REALITY |
-| `stream-one` | Streaming POST body | Response body of the same POST | Medium | REALITY and middleboxes supporting bidirectional streaming |
+| Mode         | Upload                | Download                       | Compatibility | Typical use                                                |
+| ------------ | --------------------- | ------------------------------ | ------------- | ---------------------------------------------------------- |
+| `packet-up`  | Chunked POST requests | Streaming GET                  | Highest       | CDNs and diverse middleboxes                               |
+| `stream-up`  | Streaming POST        | Streaming GET                  | High          | TLS H2 through a CDN, REALITY                              |
+| `stream-one` | Streaming POST body   | Response body of the same POST | Medium        | REALITY and middleboxes supporting bidirectional streaming |
 
 > `extra`: object
 
@@ -268,21 +268,21 @@ Set the log level to `"info"` to confirm the actual HTTP version, Host, XHTTP mo
 
 ## stream-up compared with gRPC
 
-| Item | stream-up | gRPC transport |
-| --- | --- | --- |
-| Implementation | No gRPC library; better performance | Depends on a gRPC library |
-| Download traffic | Independent GET, unaffected by CDN gRPC traffic limits | Subject to CDN limits |
-| Enhancements | Header padding, XMUX, upload/download separation, shareable `extra` | None |
+| Item             | stream-up                                                           | gRPC transport            |
+| ---------------- | ------------------------------------------------------------------- | ------------------------- |
+| Implementation   | No gRPC library; better performance                                 | Depends on a gRPC library |
+| Download traffic | Independent GET, unaffected by CDN gRPC traffic limits              | Subject to CDN limits     |
+| Enhancements     | Header padding, XMUX, upload/download separation, shareable `extra` | None                      |
 
 ## Troubleshooting
 
-| Problem | Check |
-| --- | --- |
-| Cannot connect through Cloudflare | Enable gRPC support in the Cloudflare dashboard |
-| Nginx cannot forward streaming uploads | Use `grpc_pass`, not ordinary `proxy_pass` |
-| Another CDN or reverse proxy is incompatible | Change `mode` to `"packet-up"` |
-| `stream-one` is throttled or disconnected | Try `"stream-up"`, or set server `"noSSEHeader": true` |
+| Problem                                             | Check                                                                                            |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Cannot connect through Cloudflare                   | Enable gRPC support in the Cloudflare dashboard                                                  |
+| Nginx cannot forward streaming uploads              | Use `grpc_pass`, not ordinary `proxy_pass`                                                       |
+| Another CDN or reverse proxy is incompatible        | Change `mode` to `"packet-up"`                                                                   |
+| `stream-one` is throttled or disconnected           | Try `"stream-up"`, or set server `"noSSEHeader": true`                                           |
 | A long-lived connection disconnects after some time | Check `scStreamUpServerSecs` and configure application-level keepalive for protocols such as SSH |
-| H3 was configured but is not used | Ensure client `alpn` contains only `"h3"` and check for Browser Dialer |
-| Multi-threaded speed tests underperform | Temporarily set `"maxConcurrency": 1` |
-| Reverse-proxy logs are excessive | Adjust logging for packet-up POSTs and `Referer` padding |
+| H3 was configured but is not used                   | Ensure client `alpn` contains only `"h3"` and check for Browser Dialer                           |
+| Multi-threaded speed tests underperform             | Temporarily set `"maxConcurrency": 1`                                                            |
+| Reverse-proxy logs are excessive                    | Adjust logging for packet-up POSTs and `Referer` padding                                         |
