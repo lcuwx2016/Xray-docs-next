@@ -11,6 +11,7 @@ import { sidebar as sidebar_ru } from "./menus/sidebar.ru.mts"
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+  base: "/xtls/",
   srcDir: "docs",
 
   title: "Project X",
@@ -39,7 +40,7 @@ export default defineConfig({
   ignoreDeadLinks: false,
 
   sitemap: {
-    hostname: "https://xtls.github.io"
+    hostname: "https://lcuwx2016.github.io/xtls/"
   },
 
   markdown: {
